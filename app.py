@@ -4,6 +4,7 @@ import csv
 import math
 from math import radians, sin, cos, sqrt, atan2
 import os
+import hashlib
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
@@ -82,24 +83,67 @@ ATRACCIONES = {
     "A_Planetario":  ("Planetario", -34.5705, -58.4111, 45),
     "A_PlzSerrano":  ("Plaza Serrano", -34.5881, -58.4289, 45),
     "A_River":       ("Estadio River Plate", -34.5468, -58.4491, 90),
-    "A_BChino":      ("Barrio Chino", -34.5596, -58.4490, 60)
+    "A_BChino":      ("Barrio Chino", -34.5596, -58.4490, 60),
+    "A_Ecoparque":   ("Ecoparque BA", -34.5786, -58.4158, 90),
+    "A_Usina":       ("Usina del Arte", -34.6293, -58.3582, 60),
+    "A_ParqueLezama":("Parque Lezama", -34.6268, -58.3708, 45),
+    "A_MercadoPulgas":("Mercado de las Pulgas", -34.5814, -58.4431, 60),
+    "A_MACBA":       ("MACBA", -34.6175, -58.3708, 45),
+    "A_PlzFrancia":  ("Plaza Francia", -34.5855, -58.3929, 30),
+    "A_Hipodromo":   ("Hipódromo de Palermo", -34.5682, -58.4265, 60),
+    "A_AbastoM":     ("Shopping Abasto", -34.6033, -58.4109, 60),
+    "A_PalacioBarolo":("Palacio Barolo", -34.6094, -58.3857, 45),
+    "A_ManzanaLuces":("Manzana de las Luces", -34.6108, -58.3752, 45)
 }
 
-HOTELES = {
-    "H_Alvear":          ("Alvear Palace Hotel", -34.5877, -58.3890, 0),
-    "H_Hilton":          ("Hilton Buenos Aires", -34.6054, -58.3637, 0),
-    "H_Sheraton":        ("Sheraton Buenos Aires", -34.5932, -58.3735, 0),
-    "H_NH9deJulio":      ("NH 9 de Julio", -34.6067, -58.3821, 0),
-    "H_Abasto":          ("Abasto Hotel", -34.6041, -58.4102, 0),
-}
+def load_hoteles():
+    hoteles = {}
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    csv_path = os.path.join(base_dir, 'alojamientos_turisticos.csv')
+    if not os.path.exists(csv_path): return hoteles
+    
+    with open(csv_path, encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if '4 Estrellas' in row.get('tipo', '') or '5 Estrellas' in row.get('tipo', ''):
+                try:
+                    lat = float(row['lat'])
+                    lon = float(row['long'])
+                    h_id = f"H_{row['id']}"
+                    hoteles[h_id] = (row['nombre'].strip(), lat, lon, 0)
+                except:
+                    pass
+    return hoteles
 
-RESTAURANTES = {
-    "R_AlCarbon":    ("Al Carbón", -34.5967, -58.3729, 60),
-    "R_Estancia":    ("La Estancia", -34.5987, -58.3738, 60),
-    "R_Aldo":        ("Aldo's Restorán", -34.6116, -58.3778, 60),
-    "R_Desnivel":    ("El Desnivel", -34.6167, -58.3722, 60),
-    "R_Cabrera":     ("La Cabrera", -34.5895, -58.4307, 60),
-}
+HOTELES = load_hoteles()
+
+def load_restaurantes():
+    restaurantes = {}
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    csv_path = os.path.join(base_dir, 'establecimientos_gastronomicos.csv')
+    if not os.path.exists(csv_path): return restaurantes
+    
+    with open(csv_path, encoding='utf-8-sig') as f:
+        # El CSV de gastronomía usa punto y coma como delimitador
+        reader = csv.DictReader(f, delimiter=';')
+        
+        for i, row in enumerate(reader):
+            if i > 50: break # Limitamos a 50 para mantener la velocidad
+            
+            nombre = row.get('establecimiento', '').strip()
+            if not nombre: continue
+            
+            # Generamos coordenadas simuladas deterministas ya que el CSV no tiene lat/long
+            h = int(hashlib.md5(nombre.encode()).hexdigest(), 16)
+            lat = -34.6037 + ((h % 1000) / 1000.0 - 0.5) * 0.05
+            lon = -58.3816 + (((h // 1000) % 1000) / 1000.0 - 0.5) * 0.05
+            
+            r_id = f"R_{row.get('nro_registro', i)}"
+            restaurantes[r_id] = (nombre, lat, lon, 60)
+            
+    return restaurantes
+
+RESTAURANTES = load_restaurantes()
 
 NOMBRES = {}
 NOMBRES.update({k: v[0] for k, v in ATRACCIONES.items()})
