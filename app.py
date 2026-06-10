@@ -356,7 +356,18 @@ def calcular_itinerario(hotel, horas, dias, usar_gastro):
                     menor_v = t
                     mejor_dest = d
                     
-            if not mejor_dest: break
+            if not mejor_dest:
+                # Si se visitaron todas las atracciones, reiniciar el registro para permitir días infinitos
+                visitados = set([v for v in visitados if not v.startswith("A_")])
+                if actual.startswith("A_"): 
+                    visitados.add(actual) # Evita visitar el nodo actual inmediatamente de nuevo
+                    
+                for d, t in dist.items():
+                    if d not in visitados and d.startswith("A_") and t < menor_v:
+                        menor_v = t
+                        mejor_dest = d
+                
+                if not mejor_dest: break
             
             t_vis = ATRACCIONES[mejor_dest][3]
             costo = menor_v + t_vis

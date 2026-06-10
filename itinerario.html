@@ -298,7 +298,7 @@
 
 <section class="hero">
     <h2>Planificá tu recorrido <em>ideal</em></h2>
-    <p>Nuestro generador usa el algoritmo de Dijkstra para calcular las rutas más eficientes entre atracciones, restaurantes y tu hotel.</p>
+    <p>Este generador usa el algoritmo de Dijkstra para calcular las rutas más eficientes entre atracciones, restaurantes y tu hotel.</p>
 </section>
 
 <div class="form-card">
@@ -767,8 +767,14 @@ function generarItinerario(hotelId, numDias, horasDia, conRest) {
             // Si se visitaron todas, permitimos repetir para no limitar la cantidad de días solicitados
             if (cands.length === 0 && atracciones.length > 0) {
                 visitadas = {};
+                // Evitamos sugerir la misma atracción en la que estamos parados
+                if (atracciones.includes(pos)) {
+                    visitadas[pos] = true;
+                }
                 for (var a = 0; a < atracciones.length; a++) {
-                    cands.push({ id: atracciones[a], d: dij.dist[atracciones[a]] });
+                    if (!visitadas[atracciones[a]]) {
+                        cands.push({ id: atracciones[a], d: dij.dist[atracciones[a]] });
+                    }
                 }
             }
 
